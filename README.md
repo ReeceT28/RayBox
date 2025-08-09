@@ -39,20 +39,20 @@ This image is with a resolution of 8,000 rays produced when white light hits a p
 
 With these settings, I do not acquire 60 fps, it would be closer to around 30 fps on my hardware. 
 
-<img src="screenshots/screenshot_1754003205.png">
+<img src="Screenshots/screenshot_1754003253.jpg">
 
 Correction of long and short-sightedness:
 
-<img src="screenshots/screenshot_1754012398.png">
-<img src="screenshots/screenshot_1754009917.png">
+<img src="Screenshots/screenshot_1754012398.jpg">
+<img src="Screenshots/screenshot_1754009917.jpg">
 
 Formation of a secondary rainbow:
 
-<img src="screenshots/screenshot_1753233670.png">
+<img src="Screenshots/screenshot_1753233670.jpg">
 
 Formation of a primary rainbow:
 
-<img src="screenshots/screenshot_1753233828.png">
+<img src="Screenshots/screenshot_1753233828.jpg">
 
 ## Ideas for future improvement:
 
