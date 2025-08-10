@@ -9,69 +9,65 @@
 #include "Components.h"
 #include "SellmeierManager.h"
 
-
 void Simulation::init()
 {
-	std::cout << "Simulation init called\n";
+	// ╔════════════════════════════════════╗
+	// ║   WINDOW AND VIEW INITIALIZATION   ║
+	// ╚════════════════════════════════════╝
+	std::cout << "Simulation initialising\n";
 	m_window.create(sf::VideoMode({ 1200, 800 }), "SIMULATION");
 	m_window.setFramerateLimit(60);
 	m_view = m_window.getDefaultView();
-	sf::Vector2f dir = { 1.0,0.0 };
-
-	ImGui::SFML::Init(m_window); // Initialize ImGui with the SFML window
-
-	float step = (m_endWavelength - m_startWavelength) / (prismResolution - 1);  // Subtract 1 to ensure correct number of steps
+	// Initialize ImGui with the SFML window
+	ImGui::SFML::Init(m_window);
+	m_blendMode = sf::BlendMode(
+		sf::BlendMode::Factor::SrcAlpha,
+		sf::BlendMode::Factor::DstAlpha,
+		sf::BlendMode::Equation::Max);
+	// ╔════════════════════════════════╗
+	// ║   SELLMEIER PROFILE CREATION   ║
+	// ╚════════════════════════════════╝
 	m_sellmeierManager.addProfile(
 		{ 1.03961212, 0.231792344, 1.01146945 },
 		{ 0.00600069867, 0.0200179144, 103.560653 },
 		"Crown Glass");
-	Sellmeier* sellmeierCrownGlass = m_sellmeierManager.getSellmeier("Crown Glass");
-	sellmeierCrownGlass->calculateWavelengthToIndex(m_startWavelength, step, prismResolution);
-
 	m_sellmeierManager.addProfile(
 		{ 1.43134930, 0.65054713 , 5.3414021 },
 		{ 0.0052799261, 0.0142382647 , 325.017834 },
 		"Sapphire");
-	Sellmeier* sellmeierSapphire = m_sellmeierManager.getSellmeier("Sapphire");
-	sellmeierSapphire->calculateWavelengthToIndex(m_startWavelength, step, prismResolution);
-
 	m_sellmeierManager.addProfile(
 		{ 0.6961663 , 0.4079426  , 0.8974794 },
 		{ 0.004679148 , 0.01351206 , 97.934 },
 		"Fused Silica");
-	Sellmeier* sellmeierFusedSilica = m_sellmeierManager.getSellmeier("Fused Silica");
-	sellmeierFusedSilica->calculateWavelengthToIndex(m_startWavelength, step, prismResolution);
-
 	m_sellmeierManager.addProfile(
 		{ 0.48755108 ,0.39875031 ,2.3120353 },
 		{ 0.001882178,  0.008951888 , 566.13559 },
 		"Magnesium Fluoride");
-	Sellmeier* sellmeierMgF = m_sellmeierManager.getSellmeier("Magnesium Fluoride");
-	sellmeierMgF->calculateWavelengthToIndex(m_startWavelength, step, prismResolution);
 	m_sellmeierManager.addProfile(
 		{ 0.568908 , 0.173945 , 0.020397 },
 		{ 0.005101,  0.019199 , 36.54681 },
 		"Water");
-	Sellmeier* sellmeierWater = m_sellmeierManager.getSellmeier("Water");
-	sellmeierWater->calculateWavelengthToIndex(m_startWavelength, step, prismResolution);
-	// Map wavelengths to colors
+	// ╔═════════════════════════════════╗
+	// ║   MAPS WAVELENGTHS TO COLOURS   ║
+	// ╚═════════════════════════════════╝
+	float step = (m_endWavelength - m_startWavelength) / (prismResolution - 1); 
 	for (int i = 0; i < prismResolution; ++i)
 	{
 		float wavelength = m_startWavelength + i * step;
 		sf::Color color = wavelengthToRGB(wavelength);
 		wavelengthColors[wavelength] = color;
 	}
-	// Just change to false if you don't want to see these eyesight demos
+
+	// ╔═════════════════════════════════════════════════╗
+	// ║   EXAMPLE SCENES (LONG AND SHORT SIGHTEDNESS)   ║
+	// ╚═════════════════════════════════════════════════╝
 	if (false)
 	{
 		sCreatePrism({ 300.0f, 100.0f }, 150.0f, 300, sf::Color(50, 50, 50, 50), sf::Color::White, "Crown Glass", 0.0f);
-		// Create 3 white light sources one through centre and two equally vertically spaced 
 		sCreateWhiteRay({ 0.0f, 100.0f }, { 1.0f,0.0f });
 		sCreateWhiteRay({ 0.0f, 50.0f }, { 1.0f,0.0f });
 		sCreateWhiteRay({ 0.0f, 150.0f }, { 1.0f,0.0f });
-		m_stateChange = true; // Set state change to true so that the rays are created
-
-		// Create the exact same but a bit below the first prism
+		m_stateChange = true;
 		sCreatePrism({ 350.0f, 500.0f }, 150.0f, 300, sf::Color(50, 50, 50, 50), sf::Color::White, "Crown Glass", 0.0f);
 		sCreateLens({ 170.0f,500.0f }, 15.0f, 150.0f, -7.0f, -7.0f, sf::Color(50, 50, 50, 50), sf::Color::White, "Magnesium Fluoride");
 		sCreateWhiteRay({ 0.0f, 500.0f }, { 1.0f,0.0f });
@@ -81,136 +77,95 @@ void Simulation::init()
 	if (false)
 	{
 			Entity* prism = sCreatePrism({ 300.0f, 900.0f }, 150.0f, 300, sf::Color(50, 50, 50, 50), sf::Color::White, "Crown Glass", 0.0f);
-			prism->cShape->circle.setScale({ 1.3f, 1.0f }); // Scale the prism for better visibility
-			// Create 3 white light sources one through centre and two equally vertically spaced 
+			prism->cShape->circle.setScale({ 1.3f, 1.0f });
 			sCreateWhiteRay({ 0.0f, 900.0f }, { 1.0f,0.0f });
 			sCreateWhiteRay({ 0.0f, 850.0f }, { 1.0f,0.0f });
 			sCreateWhiteRay({ 0.0f, 950.0f }, { 1.0f,0.0f });
-			m_stateChange = true; // Set state change to true so that the rays are created
-
-			// Create the exact same but a bit below the first prism
+			m_stateChange = true;
 			prism = sCreatePrism({ 400.0f, 1300.0f }, 150.0f, 300, sf::Color(50, 50, 50, 50), sf::Color::White, "Crown Glass", 0.0f);
-			prism->cShape->circle.setScale({ 1.3f, 1.0f }); // Scale the prism for better visibility
+			prism->cShape->circle.setScale({ 1.3f, 1.0f });
 			sCreateLens({ 170.0f,1300.0f }, 15.0f, 150.0f, 2.0f, 2.0f, sf::Color(50, 50, 50, 50), sf::Color::White, "Crown Glass");
 			sCreateWhiteRay({ 0.0f, 1300.0f }, { 1.0f,0.0f });
 			sCreateWhiteRay({ 0.0f, 1350.0f }, { 1.0f,0.0f });
 			sCreateWhiteRay({ 0.0f, 1250.0f }, { 1.0f,0.0f });
-
 	}
 
-	std::cout << "Simulation initialized with " << prismResolution << " rays per prism." << std::endl;
-
-	m_blendMode = sf::BlendMode(
-		sf::BlendMode::Factor::SrcAlpha,
-		sf::BlendMode::Factor::DstAlpha,
-		sf::BlendMode::Equation::Max);
+	std::cout << "Simulation succesfully initialized with " << prismResolution << " ray resolution." << '\n';
 }
-
 
 void Simulation::run()
 {
+	// Initialise simulation
 	init();
-	float m_alphaIncrement = 0.001f;
-	float m_alphaDirection = 1.0f; // 1 or -1
+	// ╔═══════════════╗
+	// ║   MAIN LOOP   ║
+	// ╚═══════════════╝
 	while (m_running)
 	{
-		sf::Clock sectionClock;
 		m_entities.update();
 		sUpdateWavelengthCreation();
 		sUpdateAlpha();
 		sUserInput();
-
-		if (m_stateChange)
-		{
-			allRays.clear();
-			sf::Vector2f dir = { 1.0f, 0.0f };
-			m_buffers.currRayCount = 0;
-
-			for (const auto& lightSource : m_lightSources)
-			{
-				m_buffers.createRay(RayData(
-					lightSource->originX, lightSource->originY,
-					lightSource->dirX, lightSource->dirY,
-					false, lightSource->whiteLight, 1.0f,
-					lightSource->color, lightSource->wavelength
-				));
-			}
-			m_buffers.commitNewRays();
-			m_stateChange = false;
-
-		}
-		sectionClock.restart();
+		sHandleStateChange();
 		sCollisionv2();
 		ImGui::SFML::Update(m_window, m_deltaClock.restart());
 		sGui();
 		sRender();
 	}
-	ImGui::SFML::Shutdown(); // Shutdown ImGui
+	// ---- Shut down ImGui ----
+	ImGui::SFML::Shutdown(); 
+}
+
+void Simulation::sHandleStateChange()
+{
+	if (m_stateChange)
+	{
+		// ---- Reset buffers and clear all rays ----
+		allRays.clear();
+		m_buffers.currRayCount = 0;
+		// ---- Create rays for all light sources ----
+		for (const auto& lightSource : m_lightSources)
+		{
+			m_buffers.createRay(RayData(
+				lightSource->originX, lightSource->originY,
+				lightSource->dirX, lightSource->dirY,
+				false, lightSource->whiteLight, 1.0f,
+				lightSource->color, lightSource->wavelength
+			));
+		}
+		// ---- Commit the new rays to the buffer ----
+		m_buffers.commitNewRays();
+		// ---- Reset flag ----
+		m_stateChange = false;
+	}
+	return;
 }
 
 void Simulation::sRender()
 {
 	m_window.clear();
-
-	// A few alternative blend modes but I choose foo as it looks the best imo 
-	//sf::BlendMode maxBlend(
-	//	sf::BlendMode::Factor::One,
-	//	sf::BlendMode::Factor::One,
-	//	sf::BlendMode::Equation::Max
-	//);
-
-	//sf::BlendMode bob(
-	//	sf::BlendMode::Factor::SrcAlpha,
-	//	sf::BlendMode::Factor::OneMinusSrcAlpha,
-	//	sf::BlendMode::Equation::Max
-	//);
-
-	sf::BlendMode foo(
-		sf::BlendMode::Factor::SrcAlpha,
-		sf::BlendMode::Factor::DstAlpha,
-		sf::BlendMode::Equation::Max
-	);
-
-	sf::BlendMode additiveBlend(
-		sf::BlendMode::Factor::SrcAlpha,
-		sf::BlendMode::Factor::One,
-		sf::BlendMode::Equation::Add
-	);
-
-	sf::BlendMode foo2(
-		sf::BlendMode::Factor::SrcAlpha,
-		sf::BlendMode::Factor::DstAlpha,
-		sf::BlendMode::Equation::Add
-	);
-
-		m_window.draw(allRays, m_blendMode);
-
-		if (allRays.getVertexCount() / 2 > 1000000)
-		{
-			std::cout << "Time to render " << allRays.getVertexCount()/2 << " line segments (since click): " << m_benchmarkClock.getElapsedTime().asMicroseconds() << " microseconds\n";
-		}
-
+	// ---- Draw all rays ----
+	m_window.draw(allRays, m_blendMode);
+	// ---- Draw all entities ----
 	for (auto& e : m_entities.getEntities())
 	{
 		if (e->cShape)
 		{
 			m_window.draw(e->cShape->circle);
 		}
-		else // customShape
+		else if(e->cCustomShape)
 		{
 			m_window.draw(*e->cCustomShape->customShape.get());
 		}
+		else
+		{
+			std::cerr << "Entity without shape or custom shape found in sRender().\n";
+		}
 	}
-
-
-	ImGui::SFML::Render(m_window); // Render ImGui elements
-
-
+	// ---- Render ImGui ----
+	ImGui::SFML::Render(m_window);
 	m_window.display();
-
 }
-
-
 
 void Simulation::sUpdateAlpha()
 {
@@ -231,6 +186,7 @@ void Simulation::sUpdateAlpha()
 void Simulation::sCreateLens(const sf::Vector2f& lensPos, const float width, const float height, const float leftInset, const float rightInset,
 	const sf::Color& fillColor, const sf::Color& outlineColor,const std::string& tag)
 {
+	// Create all necessary markers for the lens
 	Entity* leftInsetMarker = sCreateMarker(lensPos + sf::Vector2f(leftInset, height / 2.0f), 2.5f, 4,
 		sf::Color(255, 0, 0, 122),
 		sf::Color(255, 255, 255, 255),
@@ -243,31 +199,36 @@ void Simulation::sCreateLens(const sf::Vector2f& lensPos, const float width, con
 		sf::Color(255, 0, 0, 122),
 		sf::Color(255, 255, 255, 255),
 		45.0f);
+	// Initialise a MyLensShape
 	MyLensShape lens(width, height, leftInset, rightInset, leftInsetMarker, rightInsetMarker, wAndHMarker, lensPos);
+	// Set properties of the lens shape
 	lens.setOutlineColor(outlineColor);
 	lens.setOutlineThickness(1.f);
 	lens.setFillColor(fillColor);
+	// Add entity to m_entities
 	Entity* lensEntity = &m_entities.addEntity("Lens");
-
+	// Give all the markers marker Components with the correct Roles
 	leftInsetMarker->cMarker = std::make_unique<CMarker>(EntityTag(), MarkerRole::LeftInset, lensEntity);
 	rightInsetMarker->cMarker = std::make_unique<CMarker>(EntityTag(), MarkerRole::RightInset, lensEntity);
 	wAndHMarker->cMarker = std::make_unique<CMarker>(EntityTag(), MarkerRole::WidthAndHeight, lensEntity);
-
+	// Give lens entity a prism and custom shape component 
 	lensEntity->cCustomShape = std::make_unique<CCustomShape>(std::make_unique<MyLensShape>(lens));
 	lensEntity->cPrism = std::make_unique<CPrism>(tag);
 }
 
-void Simulation::sCreateDemoPrism(const sf::Vector2f& position, const float width, const float angle, const sf::Color& fillColor, const sf::Color& borderColor, const std::string material)
+void Simulation::sCreateDemoPrism(const sf::Vector2f& position, const float width, const float angle, const sf::Color& fillColor, const sf::Color& borderColor, const std::string& material)
 {
-	RayData* ray = sCreateWhiteRay({ 0.0f, 0.0f }, { 1.0f, 0.0f }); // Just some dummy data - it gets updated 
+	// Just some random data as it gets updated immediately 
+	RayData* ray = sCreateWhiteRay({ 0.0f, 0.0f }, { 1.0f, 0.0f }); 
+	// ---- Create the demo prism and set its properties ----
 	std::unique_ptr<PrismDemoShape> prismShape = std::make_unique<PrismDemoShape>(width, angle, position,ray);
 	prismShape->setFillColor(fillColor);
 	prismShape->setOutlineColor(borderColor);
 	prismShape->setOutlineThickness(1.0f);
+	// ---- Create the Entity and assign the custom shape and prism components ----
 	Entity* prismEntity = &m_entities.addEntity("DemoPrism");
 	prismEntity->cCustomShape = std::make_unique<CCustomShape>(std::move(prismShape));
 	prismEntity->cPrism = std::make_unique<CPrism>(material);
-
 }
 
 Entity* Simulation::sCreatePrism(const sf::Vector2f& position, const int radius, const int sides, const sf::Color& insideColor, const sf::Color& borderColor, const std::string& tag, const float rotationDeg)
@@ -396,7 +357,6 @@ void Simulation::sRotateToMouse(sf::Vector2f & mouseWorldPos, sf::CircleShape& s
 
 }
 
-// Update ONLY the position of the rotator 
 void Simulation::updateRotatorPosition()
 {
 	if (!m_selectedEntity || !m_rotator) return;
@@ -417,13 +377,7 @@ void Simulation::sRenderScreenShot(sf::RenderTarget& target)
 {
 	target.clear();
 
-	sf::BlendMode foo(
-		sf::BlendMode::Factor::SrcAlpha,
-		sf::BlendMode::Factor::DstAlpha,
-		sf::BlendMode::Equation::Max
-	);
-
-	target.draw(allRays, foo);
+	target.draw(allRays, m_blendMode);
 
 	for (auto& e : m_entities.getEntities())
 	{

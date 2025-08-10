@@ -476,7 +476,7 @@ void Simulation::sGui()
 			{
 				if (ImGui::Button("Take a Screenshot"))
 				{
-					std::string filename = "screenshots/screenshot_" + std::to_string(time(nullptr)) + ".png";
+					std::string filename = "Screenshots/screenshot_" + std::to_string(time(nullptr)) + ".png";
 					saveScreenshot(filename);
 				}
 				ImGui::EndMenu();
